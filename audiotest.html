@@ -1,0 +1,41 @@
+<html>
+    <head></head>
+    <body>
+        <a href="javascript:start()">Start</a>
+        <br>
+        <a href="javascript:mid()">Mid</a>
+        <br>        
+        <a href="javascript:stop()">Stop</a>        
+    </body>
+    <script>
+        var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let osc = audioCtx.createOscillator();
+        let osc2 = audioCtx.createOscillator();        
+        var gainNode = audioCtx.createGain();
+        osc.connect(gainNode);
+        osc2.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        gainNode.gain.value=0.25; //out of 1
+
+    function start(){
+        osc.frequency.value=440;
+        osc.type='sine'; //square sawtooth
+        osc.start();
+        osc2.frequency.value=660;
+        osc2.type='sine'; //square sawtooth
+        osc2.start();
+
+    }
+
+    function mid(){
+        //gainNode.gain.value=0.125;        
+        gainNode.gain.linearRampToValueAtTime(0.125,3);
+    }
+
+    function stop(){
+        osc.stop();
+        osc2.stop();
+    }
+
+    </script>
+</html>

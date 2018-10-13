@@ -1,0 +1,467 @@
+<html>
+    <head>
+        <link rel="stylesheet" type="text/css" href="styles/gn.css">
+    </head>
+    <body>
+        <div id="guitarNeckContainer">
+            <svg version="1.1"
+        baseProfile="full"
+        width="600" height="400"
+        viewBox="0 0 220 100"
+        preserveAspectRatio="none"
+        xmlns="http://www.w3.org/2000/svg" id="guitarNeck">
+
+    <rect width="100%" height="100%" fill="red" />
+
+    <!--circle cx="150" cy="100" r="80" fill="green" />
+    <text x="150" y="125" font-size="60" text-anchor="middle" fill="white">SVG</text-->
+
+            </svg>
+        </div>
+        <select name="noteSelect" id="noteSelect" onchange="GN.changeStringTuning()" onmouseout="GN.changeStringTuning()">
+            <option value="0">C</option>
+            <option value="1">C#</option>
+            <option value="2">D</option>
+            <option value="3">D#</option>
+            <option value="4">E</option>
+            <option value="5">F</option>
+            <option value="6">F#</option>
+            <option value="7">G</option>
+            <option value="8">G#</option>
+            <option value="9">A</option>
+            <option value="10">A#</option>
+            <option value="11">B</option>                                                            
+        </select>
+        Scale: <select name="scaleSelectBase" id="scaleSelectBase" onchange="GN.changeScale()">
+            <option value="-1">-</option>            
+            <option value="0">C</option>
+            <option value="1">C#</option>
+            <option value="2">D</option>
+            <option value="3">D#</option>
+            <option value="4">E</option>
+            <option value="5">F</option>
+            <option value="6">F#</option>
+            <option value="7">G</option>
+            <option value="8">G#</option>
+            <option value="9">A</option>
+            <option value="10">A#</option>
+            <option value="11">B</option>                                                            
+        </select>
+        <select name="scaleSelect" id="scaleSelect" onchange="GN.changeScale()"> 
+            <option value="0">Pentatonic</option>
+            <option value="1">Ionian (Major)</option>
+            <option value="2">Dorian</option>
+            <option value="3">Phrygian</option>
+            <option value="4">Lydian</option>
+            <option value="5">Mixolydian</option>
+            <option value="6">Aeolian (Natural Minor)</option>
+            <option value="7">Aeolian #7 (Harmonic Minor)</option>            
+            <option value="8">Locrian</option>
+        </select><BR>
+        <div id="scaleChordsDiv"></div>
+    </body>
+    <script>
+        GN={
+            chordsSelect:[],
+            neckBGColor:"#cccccc",
+            chordColor:"#44cc44",
+            chordColorBase:"#77FF77",            
+            scaleBaseDotColor:"#bb00bb",
+            scaleDotColor:"#660066",
+            scaleDotRadius:2,
+            strokeWidth:0.6,
+            scaleSelect:0,            
+            scaleSelectBase:-1,
+            selectedString:-1,
+            stringTunings:[4,9,2,7,11,4],            
+            scales:[
+                [0,3,5,7,10],
+                [0,2,4,5,7,9,11],
+                [0,2,3,5,7,9,10],
+                [0,1,3,5,7,8,10],
+                [0,2,4,6,7,9,11],
+                [0,2,4,5,7,9,10],
+                [0,2,3,5,7,8,10],
+                [0,2,3,5,7,8,11],                
+                [0,1,3,5,6,8,10]
+            ],
+            chords:[{
+                name:'min',
+                notes:[0,3,7]
+            },{
+                name:'',
+                notes:[0,4,7]
+            },{
+                name:'<sup><span class="strikethrough">o</span></sup>',
+                notes:[0,3,6,10]
+            },{
+                name:'<sup>o</sup>',
+                notes:[0,3,6,9]
+            },{
+                name:'+',
+                notes:[0,4,8]
+            }],
+            additions:[{
+                name:'9',
+                value:2
+            },{
+                name:'7',
+                value:10
+            },{name:'7+',
+                value:11
+            },{name:'6',
+                value:9
+            },{name:'5+',
+                value:8
+            },{name:'5-',
+                value:6
+            },{name:'4',
+                value:5
+            }
+            ],
+            svgHeight:400,
+            barShift:20,
+            stringCount:6,
+            stringHeights:[],
+            barLocations:[1],
+            noteArray:[
+                "C",
+                "C#",
+                "D",
+                "D#",
+                "E",
+                "F",
+                "F#",
+                "G",
+                "G#",
+                "A",
+                "A#",
+                "B"
+            ],
+            changeScale:function(){
+                GN.scaleSelectBase=Number(document.getElementById("scaleSelectBase").value);
+                GN.scaleSelect=Number(document.getElementById("scaleSelect").value);
+                GN.chordsSelect=[];
+                GN.drawNeck();           
+                GN.showScaleChords();     
+            },
+            noteName:function(x){
+                return GN.noteArray[x];
+            },
+            clearNeck:function(){
+                var parent = document.getElementById("guitarNeck");
+                for(var i=parent.children.length;i>0;i--){
+                    parent.removeChild(parent.children[i-1]);
+                }
+            },
+            changeStringTuning:function(){
+                var i=GN.selectedString;
+                var s=Number(document.getElementById('noteSelect').value);
+                GN.stringTunings[i]=s;
+                myElement=document.getElementById("noteSelect");
+                myElement.style.display="none";
+                GN.drawNeck();
+                GN.selectedString=-1;
+            },
+            drawDot:function(string,bar,fillColor,radius,strokeColor){
+                var svg = document.getElementById('guitarNeck'); //Get svg element
+                var newElement = document.createElementNS("http://www.w3.org/2000/svg", 'circle'); //Create a path in SVG's namespace
+                var x=0;
+                if(bar>0){
+                    x=(GN.barLocations[bar]+GN.barLocations[bar-1])/2;
+                }
+                newElement.setAttribute("cx",(GN.barShift+x)); //Set circle center center x
+                newElement.setAttribute("cy",GN.stringHeights[string]); //Set circle center center y
+                newElement.setAttribute("r",radius); //Set circle radius                
+                if (fillColor!='')
+                    newElement.setAttribute("fill",fillColor); //Set circle color
+                if (strokeColor!=''){
+                    newElement.setAttribute("stroke",strokeColor); //Set stroke color
+                    newElement.setAttribute("strokeWidth",GN.strokeWidth); //Set stroke color
+                }
+
+
+                svg.appendChild(newElement);                  
+            },
+            drawNeck:function(){
+                GN.clearNeck();
+                var x0=13;
+                var x=x0;
+                GN.barLocations=[1];                
+                for(var i=1;i<25;i++){
+                    GN.barLocations.push(x);
+                    x=x+x0-i*0.41;
+                }
+
+                GN.stringHeights=[];
+                for(var i=0;i<GN.stringCount;i++){
+                    GN.stringHeights.push((i+1)*100/(GN.stringCount+1));
+                }
+                
+                var svg = document.getElementById('guitarNeck'); //Get svg element
+                var newElement = document.createElementNS("http://www.w3.org/2000/svg", 'rect'); //Create a path in SVG's namespace
+                newElement.setAttribute("width",220); //Set path's data
+                newElement.setAttribute("height",100); //Set path's data
+                newElement.style.fill = GN.neckBGColor; //Set stroke colour
+                svg.appendChild(newElement); 
+                
+                for(var i=0;i<GN.stringHeights.length;i++){
+                    var newElement = document.createElementNS("http://www.w3.org/2000/svg", 'path'); //Create a path in SVG's namespace
+                    newElement.setAttribute("d","M 20 "+GN.stringHeights[i]+" L 220 "+GN.stringHeights[i]); //Set path's data
+                    newElement.style.stroke = "#000"; //Set stroke colour
+                    newElement.style.strokeWidth = "1px"; //Set stroke width
+                    svg.appendChild(newElement);  
+
+                    var newElement = document.createElementNS("http://www.w3.org/2000/svg", 'text'); //Create a path in SVG's namespace
+                    newElement.setAttribute("x",5); //Set circle center center x
+                    newElement.setAttribute("y",GN.stringHeights[i]); //Set circle center center y
+                    newElement.setAttribute("font-size",10); //Set font font-size
+                    newElement.setAttribute("id","stringTuning"+i); //Set font font-size
+                    newElement.onclick = function (e) {
+                                var i=Number(e.target.id[e.target.id.length-1]);
+                                document.getElementById('noteSelect').value=GN.stringTunings[i];
+                                GN.selectedString=i;
+                                myElement=document.getElementById("noteSelect");
+                                myElement.style.display="block";
+                                myElement.style.left="10px";
+                                myElement.style.top=(GN.stringHeights[i]*GN.svgHeight/100-5)+"px";
+                                var parent = document.getElementById("guitarNeck");
+                                var child = document.getElementById("stringTuning"+i);
+                                parent.removeChild(child);
+                        };        
+                    var textNode = document.createTextNode(GN.noteName(GN.stringTunings[i]));
+                    newElement.appendChild(textNode);
+                    svg.appendChild(newElement);              
+                }
+
+                for(var i=0;i<GN.barLocations.length;i++){
+                    var newElement = document.createElementNS("http://www.w3.org/2000/svg", 'path'); //Create a path in SVG's namespace
+                    newElement.setAttribute("d","M "+(GN.barShift+GN.barLocations[i])+" 0 L "+(GN.barShift+GN.barLocations[i])+" 100"); //Set path's data
+                    newElement.style.stroke = "#000"; //Set stroke colour
+                    newElement.style.strokeWidth = "1px"; //Set stroke width
+                    svg.appendChild(newElement);  
+                }
+
+                GN.showScale();
+                GN.drawSelectedChords();
+            },
+            drawSelectedChords:function(){
+                var svg = document.getElementById('guitarNeck'); //Get svg element                
+                for(var i=0;i<GN.chordsSelect.length;i++){
+                    //for each chord set notes
+                    var chordNotes=[];
+                    for(var j=0;j<GN.chords[GN.chordsSelect[i].chord].notes.length;j++){
+                        chordNotes[j]=(GN.chords[GN.chordsSelect[i].chord].notes[j]+GN.chordsSelect[i].note)%12;
+                    }
+                    //for each string
+                    for(var j=0;j<GN.stringHeights.length;j++){
+                        //for each bar
+                        for(var k=0;k<GN.barLocations.length;k++){
+                            var theNote=(GN.stringTunings[j]+k)%12;
+                            //for each chor note
+                            for(l=0;l<chordNotes.length;l++){
+                                if (chordNotes[l]==theNote){
+                                    //draw circle
+                                    if(l==0){
+                                        GN.drawDot(j,k,'none',GN.scaleDotRadius,GN.chordColorBase);
+                                    }else{
+                                        GN.drawDot(j,k,'none',GN.scaleDotRadius,GN.chordColor);                                        
+                                    }                                  
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            showScale:function(){
+                var svg = document.getElementById('guitarNeck'); //Get svg element
+                if(GN.scaleSelectBase>-1)
+                {
+                    //for each string
+                    for(var i=0;i<GN.stringTunings.length;i++){
+                        var stringTune=GN.stringTunings[i];
+                        //for each bar
+                        for(var j=0;j<GN.barLocations.length;j++){
+                            var barNote=(stringTune+j)%12;
+                            //for each scale note
+                            for(var k=0;k<GN.scales[GN.scaleSelect].length;k++){
+                                var scaleNote=(GN.scales[GN.scaleSelect][k]+GN.scaleSelectBase)%12;
+                                if (scaleNote==barNote)
+                                {
+                                    if(GN.scaleSelectBase==scaleNote){
+                                        //newElement.setAttribute("fill",GN.scaleBaseDotColor); //Set circle color
+                                        GN.drawDot(i,j,GN.scaleBaseDotColor,GN.scaleDotRadius,'');                                        
+                                    }else{
+                                        //newElement.setAttribute("fill",GN.scaleDotColor); //Set circle color
+                                        GN.drawDot(i,j,GN.scaleDotColor,GN.scaleDotRadius,'');                                        
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            sortNotes:function(a,b){
+                a=Number(a.note);
+                b=Number(b.note);
+                a=a-GN.scaleSelectBase;
+                if(a<0)
+                    a+=12;
+                b=b-GN.scaleSelectBase;
+                if(b<0)
+                    b+=12;
+                return a-b;
+            },
+            fixNoteName:function(noteA,b){
+                //noteA is previous note text
+                //b is note integer
+                //note B follows note A, correct note B name
+                if(noteA=='')
+                    return GN.noteArray[b];
+                else{
+                    var noteB=GN.noteArray[b]; 
+                    var c=(b+1)%12;
+                    var noteC=GN.noteArray[c]+'b';
+                    if (noteA!=noteB && noteA!=noteC && noteA.charAt(0)==noteB.charAt(0)){
+                        var c=(b+1)%12;
+                        return GN.noteArray[c]+'b';
+                    }else{
+                        if(noteA==noteC){
+                            return noteC;
+                        }
+                        else
+                            return noteB;
+                    }
+                }
+            },
+            showScaleChords:function(){
+                var div=document.getElementById('scaleChordsDiv');
+                if (GN.scaleSelectBase==-1){
+                    div.innerHTML='';
+                }else{
+                    var chordsText='';
+                    var chordsArray=[];
+                    var selectedScale=GN.scales[GN.scaleSelect];
+                    //for every chord
+                    for(var i=0;i<GN.chords.length;i++) {
+                        var chordNotes=GN.chords[i].notes;
+                        //scan scale 
+                        for(var j=0;j<selectedScale.length;j++){
+                            var dif0=(chordNotes[0]-selectedScale[j])%12;
+                            if(dif0<0)
+                                dif0+=12;
+                            //check if rest of the scale notes have the same dif
+                            var countGoodNotes=1;
+                            for(var k=1;k<chordNotes.length;k++){
+                                for(var l=0;l<selectedScale.length;l++){
+                                    if(l!=j){
+                                        var tempDif=(chordNotes[k]-selectedScale[l])%12;
+                                        if(tempDif<0)
+                                            tempDif+=12;
+                                        if(tempDif==dif0){
+                                            countGoodNotes+=1;
+                                        }
+                                    }
+                                }
+                            }
+                            //if found a chord
+                            if (countGoodNotes==chordNotes.length){
+                                dif0=(GN.scaleSelectBase-dif0)%12;
+                                if(dif0<0){
+                                    dif0+=12;
+                                }
+                                var additions=[];
+                                var additionsText='(';
+                                //scan possible additions
+                                for (var k=0;k<GN.additions.length;k++)
+                                    {
+                                        var additionNote=GN.additions[k].value;
+                                        var exists=false;
+                                        //check if addition exists in scale
+                                        for(var l=0;l<GN.scales[GN.scaleSelect].length;l++){
+                                            var a=(GN.scaleSelectBase+GN.scales[GN.scaleSelect][l])%12;
+                                            var b=(dif0+additionNote)%12;
+                                            if(a==b)
+                                                {
+                                                    exists=true;
+                                                    break;
+                                                }
+                                        }
+                                        if (exists==true){
+                                            //check that addition does NOT exist already in chord
+                                            exists=false;
+                                            for(var l=0;l<GN.chords[i].notes.length;l++){
+                                                var a=GN.chords[i].notes[l];
+                                                var b=additionNote;
+                                                if(a==b)
+                                                    {
+                                                        exists=true;
+                                                        break;
+                                                    }
+                                            }
+                                            if(exists==false)             
+                                            {
+                                            additions.push(k);
+                                            additionsText+=GN.additions[k].name+',';
+                                            }
+                                        }
+                                    }
+                                if(additionsText.length>1){
+                                    additionsText=additionsText.substr(0,additionsText.length-1);
+                                    additionsText+=')';
+                                }else{
+                                    additionsText='';
+                                }
+                                chordsArray.push({
+                                    note:dif0,
+                                    nameText:GN.chords[i].name,
+                                    noteText:'',
+                                    additions:additions,
+                                    additionsText:additionsText,
+                                    chordIndex:i
+                                });
+                            }
+                        }
+                    }
+                    chordsArray.sort(GN.sortNotes);
+                    for(var i=0;i<chordsArray.length;i++){
+                        if (i==0)
+                            var noteName=GN.noteArray[chordsArray[i].note];
+                        else
+                            var noteName=GN.fixNoteName(chordsArray[i-1].noteText,chordsArray[i].note);
+                            //var noteName=GN.noteArray[chordsArray[i].note];
+                        chordsArray[i].noteText=noteName;
+                        chordsText+='<span onclick="GN.clickChord(this,'+chordsArray[i].note+','+chordsArray[i].chordIndex+');" class="GNpointer">'+noteName+chordsArray[i].nameText+'</span> '+chordsArray[i].additionsText+'<BR>';
+                        }
+                    div.innerHTML=chordsText;
+                }
+            },
+            clickChord:function(obj,note,chordIndex){
+                if(obj.style.fontWeight=='' || obj.style.fontWeight=='normal')
+                {
+                    //chord selected
+                    obj.style.fontWeight='bold';
+                    GN.chordsSelect.push({
+                        note:note,
+                        chord:chordIndex,
+                        additions:[]
+                    });
+                }
+                else
+                {
+                    //chord unselected
+                    obj.style.fontWeight='normal';                
+                    for(var i=0;i<GN.chordsSelect.length;i++){
+                        var tempChord=GN.chordsSelect[i];
+                        if(tempChord.note==note && tempChord.chord==chordIndex){
+                            GN.chordsSelect.splice(i,1);
+                            break;
+                        }
+                    }
+                }
+                GN.drawNeck();                
+            }
+        }
+        GN.drawNeck();
+    </script>
+</html>
