@@ -6,7 +6,7 @@
         <div id="guitarNeckContainer">
             <svg version="1.1"
         baseProfile="full"
-        width="600" height="400"
+        width="600" height="300"
         viewBox="0 0 220 100"
         preserveAspectRatio="none"
         xmlns="http://www.w3.org/2000/svg" id="guitarNeck">
@@ -64,12 +64,13 @@
         GN={
             chordsSelect:[],
             neckBGColor:"#cccccc",
-            chordColor:"#44cc44",
-            chordColorBase:"#77FF77",            
+            chordColor:["#aa0000","#00aa00","#0000aa"],
+            chordColorBase:["#ff0000","#00ff00","#0000ff"],            
             scaleBaseDotColor:"#bb00bb",
             scaleDotColor:"#660066",
-            scaleDotRadius:2,
-            strokeWidth:0.6,
+            scaleDotRadius:1.75,
+            dotdR:0.5,
+            strokeWidth:"0.35%",
             scaleSelect:0,            
             scaleSelectBase:-1,
             selectedString:-1,
@@ -119,7 +120,7 @@
                 value:5
             }
             ],
-            svgHeight:400,
+            svgHeight:300,
             barShift:20,
             stringCount:6,
             stringHeights:[],
@@ -177,7 +178,7 @@
                     newElement.setAttribute("fill",fillColor); //Set circle color
                 if (strokeColor!=''){
                     newElement.setAttribute("stroke",strokeColor); //Set stroke color
-                    newElement.setAttribute("strokeWidth",GN.strokeWidth); //Set stroke color
+                    newElement.setAttribute("stroke-width",GN.strokeWidth); //Set stroke color
                 }
 
 
@@ -253,6 +254,10 @@
                     for(var j=0;j<GN.chords[GN.chordsSelect[i].chord].notes.length;j++){
                         chordNotes[j]=(GN.chords[GN.chordsSelect[i].chord].notes[j]+GN.chordsSelect[i].note)%12;
                     }
+                    for(var j=0;j<GN.chordsSelect[i].additions.length;j++){
+                        chordNotes.push((GN.additions[GN.chordsSelect[i].additions[j]].value+GN.chordsSelect[i].note)%12);
+                    }
+
                     //for each string
                     for(var j=0;j<GN.stringHeights.length;j++){
                         //for each bar
@@ -263,9 +268,9 @@
                                 if (chordNotes[l]==theNote){
                                     //draw circle
                                     if(l==0){
-                                        GN.drawDot(j,k,'none',GN.scaleDotRadius,GN.chordColorBase);
+                                        GN.drawDot(j,k,'none',GN.chordsSelect[i].radius,GN.chordColorBase[GN.chordsSelect[i].colorCode]);
                                     }else{
-                                        GN.drawDot(j,k,'none',GN.scaleDotRadius,GN.chordColor);                                        
+                                        GN.drawDot(j,k,'none',GN.chordsSelect[i].radius,GN.chordColor[GN.chordsSelect[i].colorCode]);                                        
                                     }                                  
                                 }
                             }
@@ -402,7 +407,7 @@
                                             if(exists==false)             
                                             {
                                             additions.push(k);
-                                            additionsText+=GN.additions[k].name+',';
+                                            additionsText+='<span onclick="GN.clickOption(this,'+dif0+','+i+','+k+');" class="GNpointer">'+GN.additions[k].name+'</span>,';
                                             }
                                         }
                                     }
@@ -440,11 +445,49 @@
                 if(obj.style.fontWeight=='' || obj.style.fontWeight=='normal')
                 {
                     //chord selected
+                    
+                    //select chord dot raduis
+                    var newRadius=GN.scaleDotRadius;
+                    var isFound=false;
+                    while(isFound==false){
+                        //check if the color is selected
+                        for(var j=0;j<GN.chordsSelect.length;j++){
+                            if(GN.chordsSelect[j].radius==newRadius){
+                                newRadius+=GN.dotdR;
+                                isFound=true;
+                                break;
+                            }
+                        }
+                        if(isFound==true)
+                            isFound=false;
+                        else
+                            isFound=true; 
+                    }                    
+
+                    //select chord color
+                    //for each chord color
+                    var newChordColorCode=0;
+                    for(var i=0;i<GN.chordColor.length;i++){
+                        //check if the color is selected
+                        var isFound=false;
+                        for(var j=0;j<GN.chordsSelect.length;j++){
+                            if(GN.chordsSelect[j].colorCode==i){
+                                isFound=true;
+                                break;
+                            }
+                        }
+                        if(isFound==false){
+                            newChordColorCode=i;
+                            break;
+                        }
+                    }
                     obj.style.fontWeight='bold';
                     GN.chordsSelect.push({
                         note:note,
                         chord:chordIndex,
-                        additions:[]
+                        additions:[],
+                        colorCode:newChordColorCode,
+                        radius:newRadius
                     });
                 }
                 else
@@ -460,6 +503,26 @@
                     }
                 }
                 GN.drawNeck();                
+            },
+            clickOption:function(obj,note,chordIndex,additionIndex){
+                //GN.additions[additionIndex]
+                if(obj.style.fontWeight=='' || obj.style.fontWeight=='normal'){
+                    //if chord is selected ...(otherwise do nothing)
+                    var isFound=-1;
+                    for(var i=0;i<GN.chordsSelect.length;i++){
+                        if(GN.chordsSelect[i].note==note && GN.chordsSelect[i].chord==chordIndex){
+                            isFound=i;
+                            break;
+                        }
+                    }
+                    if(isFound>-1){
+                        obj.style.fontWeight='bold';
+                        GN.chordsSelect[isFound].additions.push(additionIndex);
+                        GN.drawNeck();                                        
+                    }
+                }else{
+                    obj.style.fontWeight='normal';
+                }
             }
         }
         GN.drawNeck();
