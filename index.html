@@ -6,7 +6,7 @@
         <div id="guitarNeckContainer">
             <svg version="1.1"
         baseProfile="full"
-        width="600" height="300"
+        width="750" height="300"
         viewBox="0 0 220 100"
         preserveAspectRatio="none"
         xmlns="http://www.w3.org/2000/svg" id="guitarNeck">
@@ -63,14 +63,16 @@
     <script>
         GN={
             chordsSelect:[],
+            chordNumberLeftShift:2,
+            fretColor:"#888",
             neckBGColor:"#cccccc",
             chordColor:["#aa0000","#00aa00","#0000aa"],
             chordColorBase:["#ff0000","#00ff00","#0000ff"],            
             scaleBaseDotColor:"#bb00bb",
             scaleDotColor:"#660066",
-            scaleDotRadius:1.75,
-            dotdR:0.5,
-            strokeWidth:"0.35%",
+            scaleDotRadius:1.25,
+            dotdR:0.55,
+            strokeWidth:"0.25%",
             scaleSelect:0,            
             scaleSelectBase:-1,
             selectedString:-1,
@@ -200,22 +202,48 @@
                 }
                 
                 var svg = document.getElementById('guitarNeck'); //Get svg element
+
+                //background
                 var newElement = document.createElementNS("http://www.w3.org/2000/svg", 'rect'); //Create a path in SVG's namespace
                 newElement.setAttribute("width",220); //Set path's data
                 newElement.setAttribute("height",100); //Set path's data
                 newElement.style.fill = GN.neckBGColor; //Set stroke colour
                 svg.appendChild(newElement); 
                 
-                for(var i=0;i<GN.stringHeights.length;i++){
+                //bars
+                for(var i=0;i<GN.barLocations.length;i++){
                     var newElement = document.createElementNS("http://www.w3.org/2000/svg", 'path'); //Create a path in SVG's namespace
-                    newElement.setAttribute("d","M 20 "+GN.stringHeights[i]+" L 220 "+GN.stringHeights[i]); //Set path's data
-                    newElement.style.stroke = "#000"; //Set stroke colour
-                    newElement.style.strokeWidth = "1px"; //Set stroke width
+                    newElement.setAttribute("d","M "+(GN.barShift+GN.barLocations[i])+" 0 L "+(GN.barShift+GN.barLocations[i])+" 100"); //Set path's data
+                    newElement.style.stroke = GN.fretColor; //Set stroke colour
+                    newElement.style.strokeWidth = "0.5px"; //Set stroke width
                     svg.appendChild(newElement);  
 
+                    //bar number
                     var newElement = document.createElementNS("http://www.w3.org/2000/svg", 'text'); //Create a path in SVG's namespace
-                    newElement.setAttribute("x",5); //Set circle center center x
-                    newElement.setAttribute("y",GN.stringHeights[i]); //Set circle center center y
+                    if (i==0)
+                        newElement.setAttribute("x",GN.barShift+GN.barLocations[0]-GN.chordNumberLeftShift); //Set  x
+                    else
+                        newElement.setAttribute("x",GN.barShift+(GN.barLocations[i]+GN.barLocations[i-1])/2-GN.chordNumberLeftShift); //Set  x                    
+
+                    newElement.setAttribute("y",95);
+                    newElement.setAttribute("font-size",4); //Set font font-size
+                    var textNode = document.createTextNode(i);
+                    newElement.appendChild(textNode);
+                    svg.appendChild(newElement);                      
+                }
+
+              //strings
+              for(var i=0;i<GN.stringHeights.length;i++){
+                    var newElement = document.createElementNS("http://www.w3.org/2000/svg", 'path'); //Create a path in SVG's namespace
+                    newElement.setAttribute("d","M 20 "+GN.stringHeights[i]+" L 220 "+GN.stringHeights[i]); //Set path's data
+                    newElement.style.stroke = "#000000"; //Set stroke colour
+                    newElement.style.strokeWidth = "0.5px"; //Set stroke width
+                    svg.appendChild(newElement);  
+
+                    //string text
+                    var newElement = document.createElementNS("http://www.w3.org/2000/svg", 'text'); //Create a path in SVG's namespace
+                    newElement.setAttribute("x",5); //Set x
+                    newElement.setAttribute("y",GN.stringHeights[i]); //Set y
                     newElement.setAttribute("font-size",10); //Set font font-size
                     newElement.setAttribute("id","stringTuning"+i); //Set font font-size
                     newElement.onclick = function (e) {
@@ -233,14 +261,6 @@
                     var textNode = document.createTextNode(GN.noteName(GN.stringTunings[i]));
                     newElement.appendChild(textNode);
                     svg.appendChild(newElement);              
-                }
-
-                for(var i=0;i<GN.barLocations.length;i++){
-                    var newElement = document.createElementNS("http://www.w3.org/2000/svg", 'path'); //Create a path in SVG's namespace
-                    newElement.setAttribute("d","M "+(GN.barShift+GN.barLocations[i])+" 0 L "+(GN.barShift+GN.barLocations[i])+" 100"); //Set path's data
-                    newElement.style.stroke = "#000"; //Set stroke colour
-                    newElement.style.strokeWidth = "1px"; //Set stroke width
-                    svg.appendChild(newElement);  
                 }
 
                 GN.showScale();
@@ -407,15 +427,15 @@
                                             if(exists==false)             
                                             {
                                             additions.push(k);
-                                            additionsText+='<span onclick="GN.clickOption(this,'+dif0+','+i+','+k+');" class="GNpointer">'+GN.additions[k].name+'</span>,';
+                                            additionsText+='<span id="GNaddN'+dif0+'C'+i+'A'+k+'" onclick="GN.clickOption(this,'+dif0+','+i+','+k+');" class="GNpointer">'+GN.additions[k].name+'</span>,';
                                             }
                                         }
                                     }
                                 if(additionsText.length>1){
                                     additionsText=additionsText.substr(0,additionsText.length-1);
-                                    additionsText+=')';
+                                    additionsText+=')</span>';
                                 }else{
-                                    additionsText='';
+                                    additionsText='</span>';
                                 }
                                 chordsArray.push({
                                     note:dif0,
@@ -436,7 +456,7 @@
                             var noteName=GN.fixNoteName(chordsArray[i-1].noteText,chordsArray[i].note);
                             //var noteName=GN.noteArray[chordsArray[i].note];
                         chordsArray[i].noteText=noteName;
-                        chordsText+='<span onclick="GN.clickChord(this,'+chordsArray[i].note+','+chordsArray[i].chordIndex+');" class="GNpointer">'+noteName+chordsArray[i].nameText+'</span> '+chordsArray[i].additionsText+'<BR>';
+                        chordsText+='<span id="GNN'+chordsArray[i].note+'C'+chordsArray[i].chordIndex+'" ><span onclick="GN.clickChord(this,'+chordsArray[i].note+','+chordsArray[i].chordIndex+');" class="GNpointer">'+noteName+chordsArray[i].nameText+'</span> '+chordsArray[i].additionsText+'<BR>';
                         }
                     div.innerHTML=chordsText;
                 }
@@ -447,7 +467,7 @@
                     //chord selected
                     
                     //select chord dot raduis
-                    var newRadius=GN.scaleDotRadius;
+                    var newRadius=GN.scaleDotRadius+GN.dotdR;
                     var isFound=false;
                     while(isFound==false){
                         //check if the color is selected
@@ -489,14 +509,24 @@
                         colorCode:newChordColorCode,
                         radius:newRadius
                     });
+                    obj.parentNode.style.color=GN.chordColorBase[newChordColorCode];
                 }
                 else
                 {
                     //chord unselected
-                    obj.style.fontWeight='normal';                
+                    obj.style.fontWeight='normal';     
+                    obj.parentNode.style.color='#000000';                               
                     for(var i=0;i<GN.chordsSelect.length;i++){
                         var tempChord=GN.chordsSelect[i];
                         if(tempChord.note==note && tempChord.chord==chordIndex){
+                            for(var j=0;j<GN.chordsSelect[i].additions.length;j++){
+                                var additionText=document.getElementById('GNaddN'+GN.chordsSelect[i].note+'C'+GN.chordsSelect[i].chord+'A'+GN.chordsSelect[i].additions[j]);
+                                additionText.style.fontWeight='normal'; 
+                            }
+
+
+
+
                             GN.chordsSelect.splice(i,1);
                             break;
                         }
@@ -522,6 +552,15 @@
                     }
                 }else{
                     obj.style.fontWeight='normal';
+                    for(var i=0;i<GN.chordsSelect.length;i++){
+                        if(GN.chordsSelect[i].note==note){
+                            if(GN.chordsSelect[i].chord==chordIndex){
+                                GN.chordsSelect[i].additions.splice(GN.chordsSelect[i].additions.indexOf(additionIndex),1);
+                                break;
+                            }
+                        }
+                    }
+                    GN.drawNeck();                                                            
                 }
             }
         }
