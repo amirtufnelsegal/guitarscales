@@ -19,7 +19,13 @@
 
             </svg>
         </div>
-        <select name="noteSelect" id="noteSelect" onchange="GN.changeStringTuning()" onmouseout="GN.changeStringTuning()">
+        Instrument:<select name="instrumentSelect" id="instrumentSelect" onchange="GN.changeInstrument()" onmouseout="GN.changeInstrument()">
+                <option value="0">Guitar</option>
+                <option value="1">Bass</option>                                                          
+                <option value="2">Banjo</option>                   
+                <option value="3">Ukulele</option>                                   
+            </select><BR>
+        Scale:<select name="noteSelect" id="noteSelect" onchange="GN.changeStringTuning()" onmouseout="GN.changeStringTuning()">
             <option value="0">C</option>
             <option value="1">C#</option>
             <option value="2">D</option>
@@ -78,6 +84,12 @@
             scaleSelect:0,            
             scaleSelectBase:-1,
             selectedString:-1,
+            instrumentTunings:[
+                [4,9,2,7,11,4],            
+                [4,9,2,7],
+                [7,2,7,11,2],
+                [7,0,4,9]
+            ],
             stringTunings:[4,9,2,7,11,4],            
             scales:[
                 [0,3,5,7,10],
@@ -143,6 +155,10 @@
                 "A#",
                 "B"
             ],
+            changeInstrument:function(){
+                GN.stringTunings=GN.instrumentTunings[document.getElementById("instrumentSelect").value];
+                GN.changeScale();
+            },
             changeScale:function(){
                 GN.scaleSelectBase=Number(document.getElementById("scaleSelectBase").value);
                 GN.scaleSelect=Number(document.getElementById("scaleSelect").value);
@@ -235,7 +251,7 @@
                 }
 
               //strings
-              for(var i=0;i<GN.stringHeights.length;i++){
+              for(var i=0;i<GN.stringTunings.length;i++){
                     var newElement = document.createElementNS("http://www.w3.org/2000/svg", 'path'); //Create a path in SVG's namespace
                     newElement.setAttribute("d","M 20 "+GN.stringHeights[i]+" L 220 "+GN.stringHeights[i]); //Set path's data
                     newElement.style.stroke = "#000000"; //Set stroke colour
