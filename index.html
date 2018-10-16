@@ -3,6 +3,7 @@
         <link rel="stylesheet" type="text/css" href="styles/gn.css">
     </head>
     <body>
+        <div id="guitarNeckAppContainer">        
         <div id="guitarNeckContainer">
             <svg version="1.1"
         baseProfile="full"
@@ -59,6 +60,7 @@
             <option value="8">Locrian</option>
         </select><BR>
         <div id="scaleChordsDiv"></div>
+        </div>
     </body>
     <script>
         GN={
@@ -66,10 +68,10 @@
             chordNumberLeftShift:2,
             fretColor:"#888",
             neckBGColor:"#cccccc",
-            chordColor:["#aa0000","#00aa00","#0000aa"],
-            chordColorBase:["#ff0000","#00ff00","#0000ff"],            
-            scaleBaseDotColor:"#bb00bb",
-            scaleDotColor:"#660066",
+            chordColor:    ["#aa0000","#00aa00","#0000aa","#aaaa00","#00aaaa","#ffaaaa","#ffaaff","#aaaaff","#666633","#3366"],
+            chordColorBase:["#ff0000","#00ff00","#0000ff","#ffff00","#00ffff","#ff6666","#ff66ff","#6666ff","#aaaa66","#66aaaa"],            
+            scaleBaseDotColor:"#dd00dd",
+            scaleDotColor:"#880088",
             scaleDotRadius:1.25,
             dotdR:0.55,
             strokeWidth:"0.25%",
@@ -565,5 +567,8 @@
             }
         }
         GN.drawNeck();
+        var GNcontainer=document.getElementById("guitarNeckAppContainer");
+        GNcontainer.style.background=GN.neckBGColor;
+
     </script>
 </html>
