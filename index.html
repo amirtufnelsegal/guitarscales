@@ -64,13 +64,14 @@
             <option value="6">Aeolian (Natural Minor)</option>
             <option value="7">Aeolian #7 (Harmonic Minor)</option>            
             <option value="8">Locrian</option>
-        </select><BR>
+        </select><a href="javascript:GN.playScale();">Play</a><BR>
         <div id="scaleChordsDiv"></div>
         </div>
     </body>
     <script>
         GN={
             chordsSelect:[],
+            stringTextSize:6,
             chordNumberLeftShift:2,
             fretColor:"#888",
             neckBGColor:"#cccccc",
@@ -84,12 +85,15 @@
             scaleSelect:0,            
             scaleSelectBase:-1,
             selectedString:-1,
+            oscCount:8,
+            frequencies:[261.63,277.18,293.66,311.13,329.63,349.23,369.99,392.00,415.30,440.00,466.16,493.88],
             instrumentTunings:[
                 [4,9,2,7,11,4],            
                 [4,9,2,7],
                 [7,2,7,11,2],
                 [7,0,4,9]
             ],
+            isPlaying:false,
             stringTunings:[4,9,2,7,11,4],            
             scales:[
                 [0,3,5,7,10],
@@ -155,6 +159,66 @@
                 "A#",
                 "B"
             ],
+            audioCtx:new (window.AudioContext || window.webkitAudioContext)(),
+            oscillators:[],
+            oscTimeHandles:[0,0,0,0,0,0,0,0],
+            initSound:function(){
+                GN.oscillators=[];
+                for(var i=0;i<GN.oscCount;i++){
+                    var tempOsc=GN.audioCtx.createOscillator();
+                    GN.oscillators.push(tempOsc);
+                }                
+                var gainNode = GN.audioCtx.createGain();
+                gainNode.connect(GN.audioCtx.destination);
+                gainNode.gain.value=0.25; //out of 1
+                for(var i=0;i<GN.oscCount;i++){
+                    var tempOsc=GN.audioCtx.createOscillator();
+                    GN.oscillators[i].connect(gainNode);
+                }                
+            },
+            playNote:function(oscIndex,freq,time){
+                GN.oscillators[oscIndex].frequency.value=freq;
+                GN.oscillators[oscIndex].type='sine'; //square sawtooth
+                GN.oscillators[oscIndex].start();
+                (function(oscIndex){
+                            GN.oscTimeHandles[oscIndex]=setTimeout(function(){
+                                GN.oscillators[oscIndex].stop();  
+                            },time);
+                        })(oscIndex);
+
+            },
+            playScale:function(){
+                if(GN.isPlaying==false){//if not already playing
+                    GN.initSound(); 
+                    GN.isPlaying=true;               
+                    noteLength=250;
+                    if(GN.scaleSelectBase>-1){//if base note selected
+                        var scaleNotes=[];
+                        //for each note
+                        for(var i=0;i<=GN.scales[GN.scaleSelect].length;i++){
+                            if(i<GN.scales[GN.scaleSelect].length){
+                                scaleNotes.push((GN.scales[GN.scaleSelect][i]+GN.scaleSelectBase)%12);
+                            }else{//add first note again
+                                scaleNotes.push((GN.scales[GN.scaleSelect][0]+GN.scaleSelectBase)%12);                            
+                            }
+                            (function(index){
+                                GN.oscTimeHandles[index]=setTimeout(function(){
+                                if(index==0 || scaleNotes[index]>scaleNotes[0]){
+                                    var freq=GN.frequencies[scaleNotes[index]];
+                                }else{//increase octave
+                                    var freq=GN.frequencies[scaleNotes[index]]*2;
+                                }
+
+                                GN.playNote(index,freq,noteLength);
+                                },i*noteLength);
+                            })(i);
+                        };
+                        setTimeout(function(){
+                                GN.isPlaying=false;
+                                },(GN.scales[GN.scaleSelect].length+1)*noteLength);                        
+                    }
+                }
+            },
             changeInstrument:function(){
                 GN.stringTunings=GN.instrumentTunings[document.getElementById("instrumentSelect").value];
                 GN.changeScale();
@@ -262,7 +326,7 @@
                     var newElement = document.createElementNS("http://www.w3.org/2000/svg", 'text'); //Create a path in SVG's namespace
                     newElement.setAttribute("x",5); //Set x
                     newElement.setAttribute("y",GN.stringHeights[i]); //Set y
-                    newElement.setAttribute("font-size",10); //Set font font-size
+                    newElement.setAttribute("font-size",GN.stringTextSize); //Set font font-size
                     newElement.setAttribute("id","stringTuning"+i); //Set font font-size
                     newElement.onclick = function (e) {
                                 var i=Number(e.target.id[e.target.id.length-1]);
