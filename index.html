@@ -87,6 +87,9 @@
             selectedString:-1,
             oscCount:8,
             frequencies:[261.63,277.18,293.66,311.13,329.63,349.23,369.99,392.00,415.30,440.00,466.16,493.88],
+            scaleNoteLength:250,
+            chordNoteLength:500,
+            scaleNoteGain:0.1,
             instrumentTunings:[
                 [4,9,2,7,11,4],            
                 [4,9,2,7],
@@ -124,20 +127,28 @@
             }],
             additions:[{
                 name:'9',
-                value:2
+                value:2,
+                octaveAdd:1
             },{
                 name:'7',
-                value:10
+                value:10,
+                octaveAdd:0
             },{name:'7+',
-                value:11
+                value:11,
+                octaveAdd:0
             },{name:'6',
-                value:9
+                value:9,
+                octaveAdd:0
             },{name:'5+',
-                value:8
+                value:8,
+                octaveAdd:0
             },{name:'5-',
-                value:6
+                value:6,
+                octaveAdd:0
             },{name:'4',
-                value:5
+                value:5,
+                octaveAdd:0
+                
             }
             ],
             svgHeight:300,
@@ -166,32 +177,33 @@
                 GN.oscillators=[];
                 for(var i=0;i<GN.oscCount;i++){
                     var tempOsc=GN.audioCtx.createOscillator();
-                    GN.oscillators.push(tempOsc);
-                }                
-                var gainNode = GN.audioCtx.createGain();
-                gainNode.connect(GN.audioCtx.destination);
-                gainNode.gain.value=0.25; //out of 1
-                for(var i=0;i<GN.oscCount;i++){
-                    var tempOsc=GN.audioCtx.createOscillator();
-                    GN.oscillators[i].connect(gainNode);
+                    var gainNode = GN.audioCtx.createGain();
+                    gainNode.connect(GN.audioCtx.destination);
+                    gainNode.gain.value=0; //out of 1
+                    tempOsc.connect(gainNode);
+                    tempOsc.type='sine';
+                    tempOsc.frequency=440;
+                    tempOsc.start();
+                    GN.oscillators.push({
+                        oscillator:tempOsc,
+                        gain:gainNode
+                    });
                 }                
             },
             playNote:function(oscIndex,freq,time){
-                GN.oscillators[oscIndex].frequency.value=freq;
-                GN.oscillators[oscIndex].type='sine'; //square sawtooth
-                GN.oscillators[oscIndex].start();
+                GN.oscillators[oscIndex].oscillator.frequency.value=freq;
+                GN.oscillators[oscIndex].gain.gain.value=GN.scaleNoteGain;
                 (function(oscIndex){
                             GN.oscTimeHandles[oscIndex]=setTimeout(function(){
-                                GN.oscillators[oscIndex].stop();  
+                                GN.oscillators[oscIndex].gain.gain.value=0;
                             },time);
                         })(oscIndex);
 
             },
             playScale:function(){
                 if(GN.isPlaying==false){//if not already playing
-                    GN.initSound(); 
                     GN.isPlaying=true;               
-                    noteLength=250;
+                    noteLength=GN.scaleNoteLength;
                     if(GN.scaleSelectBase>-1){//if base note selected
                         var scaleNotes=[];
                         //for each note
@@ -217,6 +229,63 @@
                                 GN.isPlaying=false;
                                 },(GN.scales[GN.scaleSelect].length+1)*noteLength);                        
                     }
+                }
+            },
+            playChord:function(note,chordIndex){
+                if(GN.isPlaying==false){//if not already playing
+                    GN.isPlaying=true;               
+                    noteLength=GN.chordNoteLength;
+                    var chordNotes=[];
+                    //chord notes
+                    for(var i=0;i<GN.chords[chordIndex].notes.length;i++){
+                        chordNotes.push((note+GN.chords[chordIndex].notes[i])%12);
+                    }
+                    //if additions were selected
+                    var additions=[];
+                    for(var i=0;i<GN.chordsSelect.length;i++){
+                        if(GN.chordsSelect[i].note==note && GN.chordsSelect[i].chord==chordIndex){
+                            for(var j=0;j<GN.chordsSelect[i].additions.length;j++){
+                                additions.push({
+                                    note:(note+GN.additions[GN.chordsSelect[i].additions[j]].value)%12,
+                                    octaveAdd:GN.additions[GN.chordsSelect[i].additions[j]].octaveAdd
+                                });
+                            }
+                            break;
+                        }
+                    }
+                    //for each note in chord
+                    for(var i=0;i<chordNotes.length;i++){
+                        (function(index){
+                            GN.oscTimeHandles[index]=setTimeout(function(){
+                            if(index==0 || chordNotes[index]>chordNotes[0]){
+                                var freq=GN.frequencies[chordNotes[index]];
+                            }else{//increase octave
+                                var freq=GN.frequencies[chordNotes[index]]*2;
+                            }
+
+                            GN.playNote(index,freq,noteLength);
+                            },i/2*noteLength);
+                        })(i);
+                    };
+                    //for each addition note
+                    for(var i=0;i<additions.length;i++){
+                        (function(index){
+                            GN.oscTimeHandles[chordNotes.length+index]=setTimeout(function(){
+                            if(additions[index].note>chordNotes[0]){
+                                var freq=GN.frequencies[additions[index].note];
+                            }else{//increase octave
+                                var freq=GN.frequencies[additions[index].note]*2;
+                            }
+                            if(additions[index].octaveAdd>0){
+                                freq*=Math.pow(2,additions[index].octaveAdd);
+                            }
+                            GN.playNote(chordNotes.length+index,freq,noteLength);
+                            },(chordNotes.length+i)/2*noteLength);
+                        })(i);
+                    };                    
+                    setTimeout(function(){
+                            GN.isPlaying=false;
+                            },(chordNotes.length+additions.length+1)*noteLength/2);                        
                 }
             },
             changeInstrument:function(){
@@ -515,9 +584,9 @@
                                     }
                                 if(additionsText.length>1){
                                     additionsText=additionsText.substr(0,additionsText.length-1);
-                                    additionsText+=')</span>';
+                                    additionsText+=')<a href="Javascript:GN.playChord('+dif0+','+i+');">Play</a></span>';
                                 }else{
-                                    additionsText='</span>';
+                                    additionsText='<a href="Javascript:GN.playChord('+dif0+','+i+');">Play</a></span>';
                                 }
                                 chordsArray.push({
                                     note:dif0,
@@ -647,6 +716,7 @@
             }
         }
         GN.drawNeck();
+        GN.initSound();         
         var GNcontainer=document.getElementById("guitarNeckAppContainer");
         GNcontainer.style.background=GN.neckBGColor;
 
