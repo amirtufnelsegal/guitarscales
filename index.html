@@ -87,9 +87,11 @@
             selectedString:-1,
             oscCount:8,
             frequencies:[261.63,277.18,293.66,311.13,329.63,349.23,369.99,392.00,415.30,440.00,466.16,493.88],
-            scaleNoteLength:250,
-            chordNoteLength:500,
-            scaleNoteGain:0.1,
+            scaleNoteLength:500,
+            chordNoteLength:1000,
+            chordNoteDelay:100,
+            scaleNoteGain:0.2,
+            noteRampSeconds:0.1,
             instrumentTunings:[
                 [4,9,2,7,11,4],            
                 [4,9,2,7],
@@ -179,7 +181,7 @@
                     var tempOsc=GN.audioCtx.createOscillator();
                     var gainNode = GN.audioCtx.createGain();
                     gainNode.connect(GN.audioCtx.destination);
-                    gainNode.gain.value=0; //out of 1
+                    gainNode.gain.setValueAtTime(0,0); //out of 1
                     tempOsc.connect(gainNode);
                     tempOsc.type='sine';
                     tempOsc.frequency=440;
@@ -192,10 +194,13 @@
             },
             playNote:function(oscIndex,freq,time){
                 GN.oscillators[oscIndex].oscillator.frequency.value=freq;
-                GN.oscillators[oscIndex].gain.gain.value=GN.scaleNoteGain;
+                //GN.oscillators[oscIndex].gain.gain.value=GN.scaleNoteGain;
+                GN.oscillators[oscIndex].gain.gain.linearRampToValueAtTime(GN.scaleNoteGain,GN.audioCtx.currentTime+GN.noteRampSeconds);
+                
                 (function(oscIndex){
                             GN.oscTimeHandles[oscIndex]=setTimeout(function(){
-                                GN.oscillators[oscIndex].gain.gain.value=0;
+                                //GN.oscillators[oscIndex].gain.gain.value=0;
+                                GN.oscillators[oscIndex].gain.gain.linearRampToValueAtTime(0,GN.audioCtx.currentTime+GN.noteRampSeconds);                                
                             },time);
                         })(oscIndex);
 
@@ -264,7 +269,7 @@
                             }
 
                             GN.playNote(index,freq,noteLength);
-                            },i/2*noteLength);
+                            },i*GN.chordNoteDelay);
                         })(i);
                     };
                     //for each addition note
@@ -280,12 +285,12 @@
                                 freq*=Math.pow(2,additions[index].octaveAdd);
                             }
                             GN.playNote(chordNotes.length+index,freq,noteLength);
-                            },(chordNotes.length+i)/2*noteLength);
+                            },(chordNotes.length+i)*GN.chordNoteDelay);
                         })(i);
                     };                    
                     setTimeout(function(){
                             GN.isPlaying=false;
-                            },(chordNotes.length+additions.length+1)*noteLength/2);                        
+                            },(chordNotes.length+additions.length)*GN.chordNoteDelay+GN.chordNoteLength);
                 }
             },
             changeInstrument:function(){
