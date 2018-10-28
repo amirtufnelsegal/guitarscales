@@ -19,12 +19,13 @@
 
             </svg>
         </div>
+        <BR>
         Instrument:<select name="instrumentSelect" id="instrumentSelect" onchange="GN.changeInstrument()" onmouseout="GN.changeInstrument()">
                 <option value="0">Guitar</option>
                 <option value="1">Bass</option>                                                          
                 <option value="2">Banjo</option>                   
                 <option value="3">Ukulele</option>                                   
-            </select><BR>
+            </select><BR><BR>
         Scale:<select name="noteSelect" id="noteSelect" onchange="GN.changeStringTuning()" onmouseout="GN.changeStringTuning()">
             <option value="0">C</option>
             <option value="1">C#</option>
@@ -67,6 +68,15 @@
         </select><a href="javascript:GN.playScale();">Play</a><BR>
         <div id="scaleChordsDiv"></div>
         </div>
+        <div>
+        <B>How to interact with the application:</B><BR>
+            <ul>
+                <li>Select Instrument</li>
+                <li>Select string tuning by clicking the notes at the left end of each string</li>
+                <li>Select scale, and play it. The scale notes will show up on the neck, as well as the chords whose notes belong to the selected scale</li>
+                <li>Select chords and additional notes (4,6,7,9...) to see them on the neck, and play the chords</li>
+            </ul>
+        </div>
     </body>
     <script>
         GN={
@@ -74,7 +84,7 @@
             stringTextSize:6,
             chordNumberLeftShift:2,
             fretColor:"#888",
-            neckBGColor:"#cccccc",
+            neckBGColor:"#bbbbbb",
             chordColor:    ["#aa0000","#00aa00","#0000aa","#aaaa00","#00aaaa","#ffaaaa","#ffaaff","#aaaaff","#666633","#3366"],
             chordColorBase:["#ff0000","#00ff00","#0000ff","#ffff00","#00ffff","#ff6666","#ff66ff","#6666ff","#aaaa66","#66aaaa"],            
             scaleBaseDotColor:"#dd00dd",
