@@ -2,7 +2,7 @@
     <head>
         <link rel="stylesheet" type="text/css" href="styles/gn.css">
     </head>
-    <body>
+    <body onload="gnInit()">
         <div id="guitarNeckAppContainer">        
         <div id="guitarNeckContainer">
             <svg version="1.1"
@@ -730,10 +730,12 @@
                 }
             }
         }
-        GN.drawNeck();
-        GN.initSound();         
-        var GNcontainer=document.getElementById("guitarNeckAppContainer");
-        GNcontainer.style.background=GN.neckBGColor;
+        function gnInit(){
+            GN.drawNeck();
+            GN.initSound();         
+            var GNcontainer=document.getElementById("guitarNeckAppContainer");
+            GNcontainer.style.background=GN.neckBGColor;
+        }
 
     </script>
 </html>
